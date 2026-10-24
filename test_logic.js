@@ -1,0 +1,21 @@
+const vm=require('vm'),fs=require('fs');
+const s=fs.readFileSync(__dirname+'/radsafe.html','utf8'),code=s.match(/<script>([\s\S]*)<\/script>/)[1];
+const h={},el={innerHTML:''};
+const ctx={document:{querySelector:()=>el,addEventListener:(t,f)=>{(h[t]=h[t]||[]).push(f)},documentElement:{dataset:{}}},localStorage:{getItem:()=>null,setItem(){}},matchMedia:()=>({matches:false}),confirm:()=>true,URL,Blob,console,navigator:{},MouseEvent:class{}};
+ctx.window=ctx;ctx.__h=h;vm.createContext(ctx);vm.runInContext(code,ctx);
+const T=`
+const click=(a,v)=>__h.click[0]({target:{closest:()=>({dataset:{a,v}})}});
+const out=[];const chk=(n,c)=>out.push((c?'PASS ':'FAIL ')+n);
+click('start','m1');click('board');['ap2','col','eye','dos'].forEach(i=>click('eq',i));click('insp','ap1');click('conf');click('fin');chk('m1',S.r.m1&&S.r.m1.pass&&S.r.m1.bp==100);
+click('start','m2');['door','con','staff','rack'].forEach(i=>{click('insp',i);click('fix',i)});click('sign');click('fin');chk('m2',S.r.m2&&S.r.m2.pass&&S.r.m2.bp==100);
+click('start','m3');['carm','scr','dosb'].forEach(i=>{click('ti',i);click('tf',i)});
+[['op',['ap','col','eye','dos'],3],['as',['ap','col','dos'],1],['oth',[],0]].forEach(([k,it,p])=>{click('ts',k);it.forEach(i=>click('te',i));click('tp',p)});
+click('tsc','L');click('tr');click('tr');click('tk');chk('m3 ok',S.cur.ok==1);click('tx');chk('m3',S.r.m3&&S.r.m3.pass&&S.r.m3.bp==100);
+click('start','m4');click('ni','mon');click('nr');click('nm');['rpo','ph','su','ot'].forEach(i=>click('nc',i));click('nsd');['tl','ob','pp','ac','eq'].forEach(i=>click('nt',i));click('nsb');chk('m4 ok',S.cur.ok==1);click('nx');chk('m4',S.r.m4&&S.r.m4.pass&&S.r.m4.bp==100);
+click('start','s1');click('check');chk('quiz empty guard',S.cur.err==1);
+chk('badges',BG.every(b=>b[2]()===true||b[0]=='Radiation Safety Champion'));
+const pts=S.pts;click('start','m1');click('conf');click('fin');chk('no dup points',S.pts==pts);
+['dash','scen','prog','lead','cert','set','sum:m3','cert:m4'].forEach(v=>{V=v;R()});S.role='rpo';['rpo','scen'].forEach(v=>{V=v;R()});
+chk('csv rows',rows().length==12&&typeof tbl()=='string');
+out.join('\\n')`;
+console.log(vm.runInContext(T,ctx));
